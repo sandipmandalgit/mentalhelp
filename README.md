@@ -53,7 +53,25 @@ Plus: voice journaling (Web Speech API, Indian English), keyword + AI-flagged cr
 - **Web Speech API** with `en-IN` locale for voice journaling
 - **localStorage** for entries — no backend, no signup, instant demo
 
-Production would proxy Gemini calls through a backend; for this hackathon the key sits in `.env.local` and is included in the client bundle, which is the standard practical tradeoff and worth calling out if a judge asks.
+Locally, the key sits in `.env.local` and the client calls Gemini directly. In
+production (Vercel), calls route through a serverless proxy so the key stays
+server-side — see below.
+
+---
+
+## ☁️ Deploy to Vercel
+
+The app ships with a serverless proxy at [`api/gemini.js`](api/gemini.js) so the
+Gemini key never reaches the browser.
+
+1. Import this repo at [vercel.com/new](https://vercel.com/new). Vercel auto-detects
+   Vite (build: `npm run build`, output: `dist`) and the `/api` function.
+2. In **Project → Settings → Environment Variables**, add:
+   - `GEMINI_API_KEY` = your key from https://aistudio.google.com/apikey
+   - **Do NOT** add `VITE_GEMINI_API_KEY` — that would bundle the key into the
+     public client. Only the non-prefixed `GEMINI_API_KEY` is used in production.
+3. Deploy. The client posts to `/api/gemini`; the function calls Gemini with the
+   secret key and returns the structured JSON.
 
 ---
 

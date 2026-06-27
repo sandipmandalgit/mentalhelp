@@ -77,8 +77,10 @@ export default function App({ user, onSignOut }) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  // ── Setup screen if no API key ────────────────────────────────────────────
-  if (!apiKey) return <SetupScreen />
+  // ── Setup screen only in local dev with no key ────────────────────────────
+  // In production the serverless proxy (/api/gemini) holds the key, so the
+  // browser doesn't need one — never block the deployed app.
+  if (import.meta.env.DEV && !apiKey) return <SetupScreen />
 
   return (
     <div className="min-h-screen">

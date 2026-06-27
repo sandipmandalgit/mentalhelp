@@ -1,17 +1,15 @@
-// Gemini 2.5 Flash via REST. Structured outputs via responseSchema for reliable JSON.
-// API key read from VITE_GEMINI_API_KEY in .env.local
+// Gemini 2.5 Flash. Structured outputs via responseSchema for reliable JSON.
+//
+// Two paths:
+//  • Production (Vercel): calls /api/gemini, a serverless proxy that holds the
+//    key server-side (process.env.GEMINI_API_KEY) so it never reaches the browser.
+//  • Local dev: if VITE_GEMINI_API_KEY is set in .env.local, calls Gemini
+//    directly — so `npm run dev` works without running the serverless function.
 
+const DEV_KEY = import.meta.env.VITE_GEMINI_API_KEY
 const MODEL = 'gemini-2.5-flash'
-const ENDPOINT = (key) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`
 
-function getKey() {
-  const k = import.meta.env.VITE_GEMINI_API_KEY
-  if (!k) throw new Error('Missing VITE_GEMINI_API_KEY in .env.local')
-  return k
-}
-
-async function callGemini({ prompt, schema, temperature = 0.8 }) {
+async function callGeminiDirect({ prompt, schema, temperature }) {
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
@@ -20,11 +18,14 @@ async function callGemini({ prompt, schema, temperature = 0.8 }) {
       ...(schema && { responseSchema: schema })
     }
   }
-  const res = await fetch(ENDPOINT(getKey()), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${DEV_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }
+  )
   if (!res.ok) {
     const errTxt = await res.text()
     throw new Error(`Gemini ${res.status}: ${errTxt.slice(0, 200)}`)
@@ -33,6 +34,26 @@ async function callGemini({ prompt, schema, temperature = 0.8 }) {
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
   if (!text) throw new Error('Empty Gemini response')
   return JSON.parse(text)
+}
+
+async function callGeminiProxy({ prompt, schema, temperature }) {
+  const res = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, schema, temperature })
+  })
+  if (!res.ok) {
+    let msg = `Request failed (${res.status})`
+    try { const e = await res.json(); if (e?.error) msg = e.error } catch { /* non-JSON error */ }
+    throw new Error(msg)
+  }
+  return res.json()
+}
+
+async function callGemini({ prompt, schema, temperature = 0.8 }) {
+  return DEV_KEY
+    ? callGeminiDirect({ prompt, schema, temperature })
+    : callGeminiProxy({ prompt, schema, temperature })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
