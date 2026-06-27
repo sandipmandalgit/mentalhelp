@@ -1,0 +1,60 @@
+html, body, #root { min-height: 100%; }
+
+body {
+  background-color: #F8F4ED;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(45,106,106,0.04) 0%, transparent 40%),
+    radial-gradient(circle at 80% 90%, rgba(196,146,111,0.05) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* subtle paper grain */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.10 0 0 0 0 0.10 0 0 0 0 0.12 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
+
+.fade-in { animation: fadeIn .6s ease-out both; }
+.fade-up { animation: fadeUp .7s cubic-bezier(.2,.7,.2,1) both; }
+.stagger > * { animation: fadeUp .6s cubic-bezier(.2,.7,.2,1) both; }
+.stagger > *:nth-child(1) { animation-delay: .05s; }
+.stagger > *:nth-child(2) { animation-delay: .18s; }
+.stagger > *:nth-child(3) { animation-delay: .31s; }
+.stagger > *:nth-child(4) { animation-delay: .44s; }
+
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+
+/* typewriter caret for the future-letter reveal */
+.caret::after {
+  content: '▍';
+  margin-left: 2px;
+  color: #2D6A6A;
+  animation: blink 1s steps(2) infinite;
+}
+@keyframes blink { 50% { opacity: 0 } }
+
+/* hairline */
+.hairline { height: 1px; background: linear-gradient(to right, transparent, #E5DFD2 20%, #E5DFD2 80%, transparent); }
+
+/* gentle button press */
+button { transition: transform .15s ease, background-color .2s ease, border-color .2s ease, color .2s ease; }
+button:active:not(:disabled) { transform: translateY(1px); }
+
+/* focus rings — accessible but quiet */
+button:focus-visible, textarea:focus-visible, input:focus-visible {
+  outline: 2px solid #2D6A6A;
+  outline-offset: 2px;
+}
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in, .fade-up, .stagger > *, .caret::after { animation: none !important; }
+}
